@@ -158,9 +158,10 @@ def Snake():
 
     alpha = 1
     beta = 1
-    gamma = 3
-    window_size_base=1
+    gamma = 2
+    window_size_base=2
     window_size=[window_size_base]*len(points)
+    curv_list=[0]*len(points)
     shape=image_gradient_mag.shape
 
     move_count=0
@@ -173,12 +174,12 @@ def Snake():
     temp_result={}
     range_list=list(range(len(points)))
 
-    while (percent > 0.2):
+    while (percent > 0.1):
         prompt2.config(text="Step "+str(global_counter)+":")
         random.shuffle(range_list)
         for k in range_list:
-            for i in range(max(0,points[k][0]-window_size_base),min(shape[0]-1,points[k][0]+window_size_base+1)):
-                for j in range(max(0,points[k][1]-window_size_base),min(shape[1]-1,points[k][1]+window_size_base+1)):
+            for i in range(max(0,points[k][0]-window_size[k]),min(shape[0]-1,points[k][0]+window_size[k]+1)):
+                for j in range(max(0,points[k][1]-window_size[k]),min(shape[1]-1,points[k][1]+window_size[k]+1)):
                     cont,curv,image=CalculateEnergy(points[(k-1)%len(points)],(i,j),points[(k+1)%len(points)],d_bar)
                     if cont>max_cont:
                         max_cont=cont
@@ -206,6 +207,14 @@ def Snake():
         Redraw()
         percent=move_count/len(points)
         global_counter+=1
+        # Calculate curv and update window size
+        for i in range(len(points)):
+            curv_list[i] = CalculateCurv(points[(i - 1) % len(points)], points[i], points[(i + 1) % len(points)])
+        average_curv = sum(curv_list) / len(curv_list)
+        for i in range(len(curv_list)):
+            point=ConvertAxis(points[i])
+            temp_gradient_mag=image_gradient_mag[point[0]][point[1]]
+            window_size[i] = window_size_base*int(max(curv_list[i]/average_curv,1)*(-3*temp_gradient_mag**2+4))
         # update d average
         d_bar = CalculateDAverage()
         # Clear variables
