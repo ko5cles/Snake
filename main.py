@@ -15,6 +15,7 @@ file_name = None
 image_gradient_mag = None
 img=None
 
+
 def AskForFileName():
     file_name = filedialog.askopenfilename(title="Select an image file:")
     return file_name
@@ -84,7 +85,13 @@ def CalculateGradientMagnitude(img):
     image_vertical_filtered = convolution(derivative_filter.reshape((-1, 1)), image_filtered)
     # calculate magnitude
     image_gradient_mag = 1 / np.sqrt(2) * np.sqrt(image_horizontal_filtered ** 2 + image_vertical_filtered ** 2)
-    #iio.imwrite("image_gradient_mag.png", image_gradient_mag.astype(int).astype(np.uint8))
+    # remove border value, this is due to padding with 0
+    image_gradient_mag[0,:]=0
+    image_gradient_mag[-1,:]=0
+    image_gradient_mag[:,0]=0
+    image_gradient_mag[:,-1]=0
+    # save result
+    iio.imwrite("image_gradient_mag.png", image_gradient_mag.astype(int).astype(np.uint8))
     image_gradient_mag=(image_gradient_mag-np.min(image_gradient_mag))/(np.max(image_gradient_mag)-np.min(image_gradient_mag))
     print("shape: ",image_gradient_mag.shape)
     return
