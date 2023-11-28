@@ -100,7 +100,10 @@ def CalculateL2(t1,t2):
     return np.sqrt((t1[0]-t2[0])**2+(t1[1]-t2[1])**2)
 
 def CalculateCurv(t1,t2,t3):
-    return np.sqrt((t1[0]+t3[0]-2*t2[0])**2+(t1[1]+t3[1]-2*t2[1])**2)
+    l1=(t2[0]-t1[0],t2[1]-t1[1])
+    l2=(t3[0]-t2[0],t3[1]-t2[1])
+    cos=(l1[0]*l2[0]+l1[1]*l2[1])/np.sqrt(l1[0]**2+l1[1]**2)/np.sqrt(l2[0]**2+l2[1]**2)
+    return 1-cos
 
 def CalculateDAverage():
     sum = 0
@@ -158,7 +161,7 @@ def Snake():
 
     alpha = 1
     beta = 1
-    gamma = 2
+    gamma = 1.2
     window_size_base=2
     window_size=[window_size_base]*len(points)
     curv_list=[0]*len(points)
@@ -169,7 +172,6 @@ def Snake():
 
     d_bar = CalculateDAverage()
     max_cont=0
-    max_curv=0
     target_location=None
     temp_result={}
     range_list=list(range(len(points)))
@@ -183,14 +185,12 @@ def Snake():
                     cont,curv,image=CalculateEnergy(points[(k-1)%len(points)],(i,j),points[(k+1)%len(points)],d_bar)
                     if cont>max_cont:
                         max_cont=cont
-                    if curv>max_curv:
-                        max_curv=curv
                     temp_result[(i,j)]=(cont,curv,image)
             local_energy=temp_result[points[k]]
-            min_energy=alpha*local_energy[0]/max_cont+beta*local_energy[1]/max_curv-gamma*local_energy[2]
+            min_energy=alpha*local_energy[0]/max_cont+beta*local_energy[1]-gamma*local_energy[2]
             for key in temp_result.keys():
                 value=temp_result[key]
-                energy=alpha*value[0]/max_cont+beta*value[1]/max_curv-gamma*value[2]
+                energy=alpha*value[0]/max_cont+beta*value[1]-gamma*value[2]
                 if energy<min_energy:
                     min_energy=energy
                     target_location=key
@@ -207,14 +207,11 @@ def Snake():
         Redraw()
         percent=move_count/len(points)
         global_counter+=1
-        # Calculate curv and update window size
-        for i in range(len(points)):
-            curv_list[i] = CalculateCurv(points[(i - 1) % len(points)], points[i], points[(i + 1) % len(points)])
-        average_curv = sum(curv_list) / len(curv_list)
+
         for i in range(len(curv_list)):
             point=ConvertAxis(points[i])
             temp_gradient_mag=image_gradient_mag[point[0]][point[1]]
-            window_size[i] = window_size_base*int(max(curv_list[i]/average_curv,1)*(-3*temp_gradient_mag**2+4))
+            window_size[i] = window_size_base*int(-3*temp_gradient_mag**2+4)
         # update d average
         d_bar = CalculateDAverage()
         # Clear variables
