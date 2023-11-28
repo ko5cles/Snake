@@ -64,6 +64,15 @@ def convolution(f, I):
 
 
 def CalculateGradientMagnitude(img):
+    print("image: ",img.shape)
+    # RGB image
+    if len(img.shape)==3:
+        # Fake gray scale
+        if (img[:,:,0]==img[:,:,1]).all():
+            img=img[:,:,0]
+        # Convert RGB to gray scale
+        else:
+            img=0.299*img[:,:,0]+0.587*img[:,:,1]+0.114*img[:,:,2]
     global image_gradient_mag
     # Gaussian filter
     gaussian_filter = Gaussian_filter1D(13, 1)
@@ -77,6 +86,7 @@ def CalculateGradientMagnitude(img):
     image_gradient_mag = 1 / np.sqrt(2) * np.sqrt(image_horizontal_filtered ** 2 + image_vertical_filtered ** 2)
     #iio.imwrite("image_gradient_mag.png", image_gradient_mag.astype(int).astype(np.uint8))
     image_gradient_mag=(image_gradient_mag-np.min(image_gradient_mag))/(np.max(image_gradient_mag)-np.min(image_gradient_mag))
+    print("shape: ",image_gradient_mag.shape)
     return
 
 def Preprocess():
@@ -116,14 +126,16 @@ def CalculateDAverage():
 
 def ConvertAxis(cur):
     global image_gradient_mag
-    return (cur[0],image_gradient_mag.shape[1]-1-cur[1])
+    return (cur[0],image_gradient_mag.shape[0]-1-cur[1])
 
 def CalculateEnergy(prev,cur,next,averge_d):
     global image_gradient_mag
     cont=(averge_d-CalculateL2(prev,cur))**2
     curv=CalculateCurv(prev,cur,next)
+    print("cur: ",cur)
     axis=ConvertAxis(cur)
-    image=image_gradient_mag[axis[0]][axis[1]]
+    print("axis: ",axis)
+    image=image_gradient_mag[axis[1]][axis[0]]
     return (cont,curv,image)
 
 def Redraw():
@@ -161,10 +173,9 @@ def Snake():
 
     alpha = 1
     beta = 1
-    gamma = 1.2
+    gamma = 2
     window_size_base=2
     window_size=[window_size_base]*len(points)
-    curv_list=[0]*len(points)
     shape=image_gradient_mag.shape
 
     move_count=0
@@ -180,17 +191,20 @@ def Snake():
         prompt2.config(text="Step "+str(global_counter)+":")
         random.shuffle(range_list)
         for k in range_list:
-            for i in range(max(0,points[k][0]-window_size[k]),min(shape[0]-1,points[k][0]+window_size[k]+1)):
-                for j in range(max(0,points[k][1]-window_size[k]),min(shape[1]-1,points[k][1]+window_size[k]+1)):
+            for i in range(max(0,points[k][0]-window_size[k]),min(shape[1]-1,points[k][0]+window_size[k]+1)):
+                for j in range(max(0,points[k][1]-window_size[k]),min(shape[0]-1,points[k][1]+window_size[k]+1)):
                     cont,curv,image=CalculateEnergy(points[(k-1)%len(points)],(i,j),points[(k+1)%len(points)],d_bar)
                     if cont>max_cont:
                         max_cont=cont
                     temp_result[(i,j)]=(cont,curv,image)
             local_energy=temp_result[points[k]]
+            print("local energy: ",local_energy)
             min_energy=alpha*local_energy[0]/max_cont+beta*local_energy[1]-gamma*local_energy[2]
+            print("min energy: ",min_energy)
             for key in temp_result.keys():
                 value=temp_result[key]
                 energy=alpha*value[0]/max_cont+beta*value[1]-gamma*value[2]
+                print("energy: ",energy)
                 if energy<min_energy:
                     min_energy=energy
                     target_location=key
@@ -208,9 +222,9 @@ def Snake():
         percent=move_count/len(points)
         global_counter+=1
 
-        for i in range(len(curv_list)):
+        for i in range(len(points)):
             point=ConvertAxis(points[i])
-            temp_gradient_mag=image_gradient_mag[point[0]][point[1]]
+            temp_gradient_mag=image_gradient_mag[point[1]][point[0]]
             window_size[i] = window_size_base*int(-3*temp_gradient_mag**2+4)
         # update d average
         d_bar = CalculateDAverage()
@@ -219,6 +233,7 @@ def Snake():
         time.sleep(0.5)
 
 def DrawPoint(event):
+    print(event.x,event.y)
     global canvas
     global prev_loc
     global points
@@ -244,7 +259,7 @@ def OpenImage():
     img_2_process = iio.imread(file_name)
 
     global canvas
-    canvas = Canvas(width=img_2_process.shape[0], height=img_2_process.shape[1])
+    canvas = Canvas(width=img_2_process.shape[1], height=img_2_process.shape[0])
     canvas.create_image((0, 0), image=img, anchor=NW)
     draw_id = canvas.bind("<Button-1>", DrawPoint)
     canvas.pack()
