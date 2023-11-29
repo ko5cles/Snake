@@ -200,7 +200,7 @@ def Snake():
 
     alpha = 1
     beta = 1
-    gamma = 3
+    gamma = 1.2
     window_size_base = 3
     window_size = [window_size_base] * len(points)
     shape = image_gradient_mag.shape
@@ -303,7 +303,7 @@ root = Tk()
 root.title("Snake")
 
 # ask for an image file
-prompt1 = Label(root, text="Select an image file:")
+prompt1 = Label(root, text="Select an image file (recommend 500*500):")
 prompt1.pack()
 button1 = Button(text="Open", command=OpenImage)
 button1.pack()
