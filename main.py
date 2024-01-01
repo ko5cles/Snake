@@ -1,7 +1,6 @@
-# This is a sample Python script.
 from tkinter import *
 from tkinter import filedialog
-import imageio.v3 as iio
+import imageio as iio
 from PIL import ImageTk, Image
 import numpy as np
 import time
@@ -70,12 +69,17 @@ def convolution(f, I):
 def CalculateGradientMagnitude(img):
     # RGB image
     if len(img.shape) == 3:
-        # Fake gray scale
-        if (img[:, :, 0] == img[:, :, 1]).all():
-            img = img[:, :, 0]
-        # Convert RGB to gray scale
-        else:
-            img = 0.299 * img[:, :, 0] + 0.587 * img[:, :, 1] + 0.114 * img[:, :, 2]
+        if img.shape[2]==3 or img.shape[2]==4:
+            # Fake gray scale
+            if (img[:, :, 0] == img[:, :, 1]).all():
+                img = img[:, :, 0]
+            # Convert RGB to gray scale
+            else:
+                img = 0.299 * img[:, :, 0] + 0.587 * img[:, :, 1] + 0.114 * img[:, :, 2]
+        elif img.shape[2]==2:
+            # Remove transparency channel
+            img=img[:,:,0]
+
     global image_gradient_mag
     # Gaussian filter
     gaussian_filter = Gaussian_filter1D(13, 1)
@@ -93,7 +97,7 @@ def CalculateGradientMagnitude(img):
     image_gradient_mag[:, 0] = 0
     image_gradient_mag[:, -1] = 0
     # save result
-    iio.imwrite("image_gradient_mag.png", image_gradient_mag.astype(int).astype(np.uint8))
+    # iio.imwrite("image_gradient_mag.png", image_gradient_mag.astype(int).astype(np.uint8))
     image_gradient_mag = (image_gradient_mag - np.min(image_gradient_mag)) / (
             np.max(image_gradient_mag) - np.min(image_gradient_mag))
     return
@@ -200,7 +204,7 @@ def Snake():
 
     alpha = 1
     beta = 1
-    gamma = 1.2
+    gamma = 1.5
     window_size_base = 3
     window_size = [window_size_base] * len(points)
     shape = image_gradient_mag.shape
@@ -257,7 +261,7 @@ def Snake():
 
         # Clear variables
         move_count = 0
-        time.sleep(0.5)
+        time.sleep(0.2)
 
 
 def DrawPoint(event):
